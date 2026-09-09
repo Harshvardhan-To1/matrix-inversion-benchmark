@@ -89,10 +89,15 @@ def main() -> None:
             else:
                 # Few parameters -> converges quickly; big dims need few epochs.
                 epochs, batch_size, lr = {10: (60, 64, 3e-2), 100: (30, 32, 3e-2)}.get(
-                    dim, (10, 8, 3e-2)
+                    dim, (3, 4, 3e-2)
                 )
+            train_m, train_i = matrices, inverses
+            if kind == "ns" and dim > 100:
+                # 17 scalar parameters: a small subset is plenty, and unrolled
+                # 500x500 matmuls make full-dataset epochs prohibitive on CPU.
+                train_m, train_i = matrices[:200], inverses[:200]
             print(f"Training InverseNet-{kind.upper()} for dim={dim} ...")
-            model = train_one(kind, dim, matrices, inverses, epochs, batch_size, lr)
+            model = train_one(kind, dim, train_m, train_i, epochs, batch_size, lr)
             out = args.models_dir / f"inversenet_{kind}_dim{dim}.pt"
             torch.save(model.state_dict(), out)
             print(f"  saved -> {out}")
